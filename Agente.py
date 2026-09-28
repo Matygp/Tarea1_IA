@@ -1,5 +1,6 @@
 from A_estrella import busqueda_a_estrella
 from Costo_uniforme import busqueda_ucs
+from BFS import busqueda_bfs
 
 
 class Agente:
@@ -27,6 +28,8 @@ class Agente:
                 self.camino_actual = busqueda_a_estrella(self.posicion, entorno.salida, entorno)
             elif algoritmo == "ucs":
                 self.camino_actual = busqueda_ucs(self.posicion, entorno.salida, entorno)
+            elif algoritmo == "bfs":
+                self.camino_actual = busqueda_bfs(self.posicion, entorno.salida, entorno)
             else:
                 raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 

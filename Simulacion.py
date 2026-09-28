@@ -35,7 +35,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
         if mapa[py][px] != 0:
             raise ValueError(f"Posición inicial {pos} es un muro")
     
-    if algoritmo not in ("a_star", "ucs"):
+    if algoritmo not in ("a_star", "ucs", "bfs"):
         raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 
     entorno = Mapa_evacuacion(mapa, salida)
@@ -81,7 +81,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
     return tasa_supervivencia, turno
 
 
-def ejecutar_benchmarking(mapa, salida, posiciones_iniciales_base, focos_fuego_base, algoritmo="a_star", iteraciones=100, k_fuego=5, semilla=None):
+def ejecutar_benchmarking(mapa, salida, posiciones_iniciales_base, focos_fuego_base, algoritmo="a_star", iteraciones=200, k_fuego=5, semilla=None):
     """
     Ejecuta benchmarking con variabilidad aleatoria en posiciones iniciales y focos de fuego.
     Si se proporciona una semilla, los resultados son reproducibles.
@@ -136,18 +136,25 @@ if __name__ == "__main__":
     posiciones_base = [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0), (0, 3)]
     focos_fuego_base = {(0, 9)}
 
-    print("=== INICIANDO BENCHMARKING (100 iteraciones) ===")
+    print("=== INICIANDO BENCHMARKING (200 iteraciones) ===")
 
     # Ejecutar benchmarking para A*
     gestor_a_star = ejecutar_benchmarking(
         mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="a_star", iteraciones=100, k_fuego=4, semilla=42
+        algoritmo="a_star", iteraciones=200, k_fuego=4, semilla=42
     )
     gestor_a_star.imprimir_resultados()
 
     # Ejecutar benchmarking para UCS
     gestor_ucs = ejecutar_benchmarking(
         mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="ucs", iteraciones=100, k_fuego=4, semilla=42
+        algoritmo="ucs", iteraciones=200, k_fuego=4, semilla=42
     )
     gestor_ucs.imprimir_resultados()
+
+    # Ejecutar benchmarking para BFS
+    gestor_bfs = ejecutar_benchmarking(
+        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
+        algoritmo="bfs", iteraciones=200, k_fuego=4, semilla=42
+    )
+    gestor_bfs.imprimir_resultados()
