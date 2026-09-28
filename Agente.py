@@ -1,8 +1,8 @@
-from A_estrella import busqueda_a_estrella
-from Costo_uniforme import busqueda_ucs
-from BFS import busqueda_bfs
-from Greedy import busqueda_greedy
-from Genetico import busqueda_genetico
+from algoritmos.A_estrella import busqueda_a_estrella
+from algoritmos.Costo_uniforme import busqueda_ucs
+from algoritmos.BFS import busqueda_bfs
+from algoritmos.Greedy import busqueda_greedy
+from algoritmos.Genetico import busqueda_genetico
 
 
 class Agente:

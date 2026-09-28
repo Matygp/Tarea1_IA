@@ -1,7 +1,7 @@
 import random
 from Mapa import Mapa_evacuacion
 from Agente import Agente
-from Metricas import GestorMetricas
+from metricas.Metricas import GestorMetricas
 
 
 def _posiciones_validas(mapa, salida):
@@ -82,10 +82,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
 
 
 def ejecutar_benchmarking(mapa, salida, posiciones_iniciales_base, focos_fuego_base, algoritmo="a_star", iteraciones=200, k_fuego=5, semilla=None):
-    """
-    Ejecuta benchmarking con variabilidad aleatoria en posiciones iniciales y focos de fuego.
-    Si se proporciona una semilla, los resultados son reproducibles.
-    """
+ 
     if semilla is not None:
         random.seed(semilla)
     
@@ -117,58 +114,3 @@ def ejecutar_benchmarking(mapa, salida, posiciones_iniciales_base, focos_fuego_b
         gestor.registrar_ejecucion(tasa, turnos)
 
     return gestor
-
-
-if __name__ == "__main__":
-    mapa_prueba = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    ]
-    salida_meta = (9, 9)
-    posiciones_base = [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0), (0, 3)]
-    focos_fuego_base = {(0, 9)}
-
-    print("=== INICIANDO BENCHMARKING (200 iteraciones) ===")
-
-    # Ejecutar benchmarking para A*
-    gestor_a_star = ejecutar_benchmarking(
-        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="a_star", iteraciones=200, k_fuego=4, semilla=42
-    )
-    gestor_a_star.imprimir_resultados()
-
-    # Ejecutar benchmarking para UCS
-    gestor_ucs = ejecutar_benchmarking(
-        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="ucs", iteraciones=200, k_fuego=4, semilla=42
-    )
-    gestor_ucs.imprimir_resultados()
-
-    # Ejecutar benchmarking para BFS
-    gestor_bfs = ejecutar_benchmarking(
-        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="bfs", iteraciones=200, k_fuego=4, semilla=42
-    )
-    gestor_bfs.imprimir_resultados()
-
-    # Ejecutar benchmarking para Greedy
-    gestor_greedy = ejecutar_benchmarking(
-        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="greedy", iteraciones=200, k_fuego=4, semilla=42
-    )
-    gestor_greedy.imprimir_resultados()
-
-    # Ejecutar benchmarking para Genético
-    gestor_genetico = ejecutar_benchmarking(
-        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
-        algoritmo="genetico", iteraciones=200, k_fuego=4, semilla=42
-    )
-    gestor_genetico.imprimir_resultados()

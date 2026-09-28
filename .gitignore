@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Resultados y datos generados
+resultados/
+*.png
+benchmarking_resultados.png
+distribucion_turnos.png
+
+# Archivos temporales
+*.log
+*.tmp
+.DS_Store
