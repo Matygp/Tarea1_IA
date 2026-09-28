@@ -1,6 +1,7 @@
 from A_estrella import busqueda_a_estrella
 from Costo_uniforme import busqueda_ucs
 
+
 class Agente:
     def __init__(self, id_agente, posicion_inicial):
         self.id = id_agente
@@ -26,6 +27,8 @@ class Agente:
                 self.camino_actual = busqueda_a_estrella(self.posicion, entorno.salida, entorno)
             elif algoritmo == "ucs":
                 self.camino_actual = busqueda_ucs(self.posicion, entorno.salida, entorno)
+            else:
+                raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 
         # Ejecutar movimiento si hay ruta válida
         if len(self.camino_actual) > 1:
@@ -35,6 +38,6 @@ class Agente:
             if entorno.es_valido(nueva_pos[0], nueva_pos[1]):
                 self.posicion = nueva_pos
         
-        # Verificar si llegó a la salida
-        if self.posicion == entorno.salida:
+        # Verificar si llegó a la salida (y la salida no está en fuego)
+        if self.posicion == entorno.salida and self.posicion not in entorno.fuego:
             self.estado = "evacuado"

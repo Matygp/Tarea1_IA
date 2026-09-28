@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class GestorMetricas:
     def __init__(self, algoritmo, iteraciones):
         self.algoritmo = algoritmo
@@ -16,11 +17,20 @@ class GestorMetricas:
         Calcula los estadísticos descriptivos obligatorios para el benchmarking.
         """
         if not self.tasas_supervivencia or not self.tiempos_despeje:
-            return {}
+            return {
+                "algoritmo": self.algoritmo,
+                "iteraciones": 0,
+                "supervivencia_media": 0.0,
+                "supervivencia_std": 0.0,
+                "tiempo_media": 0.0,
+                "tiempo_std": 0.0,
+                "tiempo_min": 0,
+                "tiempo_max": 0,
+            }
 
         stats = {
             "algoritmo": self.algoritmo,
-            "iteraciones": self.iteraciones,
+            "iteraciones": len(self.tasas_supervivencia),
             "supervivencia_media": float(np.mean(self.tasas_supervivencia)),
             "supervivencia_std": float(np.std(self.tasas_supervivencia)),
             "tiempo_media": float(np.mean(self.tiempos_despeje)),
@@ -34,8 +44,8 @@ class GestorMetricas:
         stats = self.calcular_estadisticas()
         print(f"\n--- Resultados de Benchmarking: {stats['algoritmo'].upper()} ---")
         print(f"  - Iteraciones evaluadas : {stats['iteraciones']}")
-        print(f"  - Tasa Supervivencia Media: {stats['supervivencia_media']:.2f}% (±{stats['supervivencia_std']:.2f})")
+        print(f"  - Tasa Supervivencia Media: {stats['supervivencia_media']:.2f}% ((+-){stats['supervivencia_std']:.2f})")
         print(f"  - Tiempo (Turnos) Media : {stats['tiempo_media']:.2f}")
-        print(f"  - Desviación Estándar   : {stats['tiempo_std']:.2f}")
-        print(f"  - Valor Mínimo (Turnos) : {stats['tiempo_min']}")
-        print(f"  - Valor Máximo (Turnos) : {stats['tiempo_max']}")
+        print(f"  - Desviacion Estandar   : {stats['tiempo_std']:.2f}")
+        print(f"  - Valor Minimo (Turnos) : {stats['tiempo_min']}")
+        print(f"  - Valor Maximo (Turnos) : {stats['tiempo_max']}")
