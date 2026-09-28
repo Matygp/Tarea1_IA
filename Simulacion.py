@@ -35,7 +35,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
         if mapa[py][px] != 0:
             raise ValueError(f"Posición inicial {pos} es un muro")
     
-    if algoritmo not in ("a_star", "ucs", "bfs"):
+    if algoritmo not in ("a_star", "ucs", "bfs", "greedy"):
         raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 
     entorno = Mapa_evacuacion(mapa, salida)
@@ -158,3 +158,10 @@ if __name__ == "__main__":
         algoritmo="bfs", iteraciones=200, k_fuego=4, semilla=42
     )
     gestor_bfs.imprimir_resultados()
+
+    # Ejecutar benchmarking para Greedy
+    gestor_greedy = ejecutar_benchmarking(
+        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
+        algoritmo="greedy", iteraciones=200, k_fuego=4, semilla=42
+    )
+    gestor_greedy.imprimir_resultados()

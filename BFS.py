@@ -2,11 +2,7 @@ from collections import deque
 
 
 def busqueda_bfs(inicio, meta, entorno):
-    """
-    Búsqueda en Anchura (BFS) - Algoritmo no informado.
-    Encuentra el camino más corto en número de movimientos (no considera costos).
-    Usa una cola FIFO (First In, First Out).
-    """
+   
     cola = deque([inicio])
     visitados = {inicio}
     padres = {inicio: None}
