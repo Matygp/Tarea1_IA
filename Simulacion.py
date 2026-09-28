@@ -35,7 +35,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
         if mapa[py][px] != 0:
             raise ValueError(f"Posición inicial {pos} es un muro")
     
-    if algoritmo not in ("a_star", "ucs", "bfs", "greedy"):
+    if algoritmo not in ("a_star", "ucs", "bfs", "greedy", "genetico"):
         raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 
     entorno = Mapa_evacuacion(mapa, salida)
@@ -165,3 +165,10 @@ if __name__ == "__main__":
         algoritmo="greedy", iteraciones=200, k_fuego=4, semilla=42
     )
     gestor_greedy.imprimir_resultados()
+
+    # Ejecutar benchmarking para Genético
+    gestor_genetico = ejecutar_benchmarking(
+        mapa_prueba, salida_meta, posiciones_base, focos_fuego_base, 
+        algoritmo="genetico", iteraciones=200, k_fuego=4, semilla=42
+    )
+    gestor_genetico.imprimir_resultados()

@@ -2,6 +2,7 @@ from A_estrella import busqueda_a_estrella
 from Costo_uniforme import busqueda_ucs
 from BFS import busqueda_bfs
 from Greedy import busqueda_greedy
+from Genetico import busqueda_genetico
 
 
 class Agente:
@@ -33,6 +34,8 @@ class Agente:
                 self.camino_actual = busqueda_bfs(self.posicion, entorno.salida, entorno)
             elif algoritmo == "greedy":
                 self.camino_actual = busqueda_greedy(self.posicion, entorno.salida, entorno)
+            elif algoritmo == "genetico":
+                self.camino_actual = busqueda_genetico(self.posicion, entorno.salida, entorno)
             else:
                 raise ValueError(f"Algoritmo desconocido: {algoritmo}")
 
