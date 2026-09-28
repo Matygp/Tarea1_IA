@@ -248,6 +248,7 @@ class JuegoEvacuacion:
         ancho_canvas = self.canvas.winfo_width()
         alto_canvas = self.canvas.winfo_height()
         
+        # Si el canvas aún no tiene tamaño, usar valores por defecto
         if ancho_canvas <= 1 or alto_canvas <= 1:
             ancho_canvas = 600
             alto_canvas = 500
@@ -258,6 +259,9 @@ class JuegoEvacuacion:
         celda_ancho = ancho_canvas // columnas
         celda_alto = alto_canvas // filas
         celda = min(celda_ancho, celda_alto)
+        
+        # Asegurar que las celdas sean visibles (mínimo 10px para mapas grandes)
+        celda = max(celda, 10)
         
         # Centrar mapa
         offset_x = (ancho_canvas - columnas * celda) // 2
