@@ -14,8 +14,8 @@ from Simulacion import ejecutar_benchmarking
 
 
 def generar_graficas(mapa, salida, posiciones_base, focos_fuego_base, k_fuego=4, iteraciones=200, semilla=42):
-    """Genera gráficas comparativas de todos los algoritmos."""
     
+
     algoritmos = ["a_star", "ucs", "bfs", "greedy", "genetico"]
     nombres = ["A*", "UCS", "BFS", "Greedy", "Genético"]
     colores = ["#2196F3", "#4CAF50", "#FF9800", "#F44336", "#9C27B0"]
@@ -256,4 +256,79 @@ def generar_grafica_historial(carpeta='resultados'):
     plt.tight_layout()
     plt.savefig('resultados/historial_simulaciones.png', dpi=150, bbox_inches='tight')
     print(f"Gráfica guardada en 'resultados/historial_simulaciones.png'")
+    plt.close()
+
+
+def generar_diagrama_caja(carpeta='resultados'):
+    """Genera diagramas de caja (boxplot) con los datos del benchmarking."""
+    datos = cargar_datos_juego(carpeta)
+    
+    if not datos:
+        print("No se encontraron datos de simulaciones")
+        print("Ejecuta el benchmarking primero desde Juego.py")
+        return
+    
+    # Agrupar por algoritmo - usar TODOS los datos disponibles
+    por_algoritmo = {}
+    for d in datos:
+        alg = d.get('algoritmo', 'desconocido')
+        if alg not in por_algoritmo:
+            por_algoritmo[alg] = {'turnos': [], 'supervivencia': []}
+        
+        # Si hay listas de datos individuales, usarlas
+        if isinstance(d.get('turnos'), list):
+            por_algoritmo[alg]['turnos'].extend(d['turnos'])
+        if isinstance(d.get('supervivencia'), list):
+            por_algoritmo[alg]['supervivencia'].extend(d['supervivencia'])
+        
+        # Si no hay listas, usar los datos individuales de la simulación
+        if not isinstance(d.get('turnos'), list) and 'estadisticas' in d:
+            # Usar el turno de la simulación individual
+            if 'turnos' in d:
+                por_algoritmo[alg]['turnos'].append(d['turnos'])
+            if 'estadisticas' in d and 'tasa_supervivencia' in d['estadisticas']:
+                por_algoritmo[alg]['supervivencia'].append(d['estadisticas']['tasa_supervivencia'])
+    
+    # Filtrar algoritmos con datos
+    algoritmos = [alg for alg in por_algoritmo if por_algoritmo[alg]['turnos'] or por_algoritmo[alg]['supervivencia']]
+    
+    if not algoritmos:
+        print("No se encontraron datos para generar diagramas de caja")
+        return
+    
+    nombres = [alg.upper() for alg in algoritmos]
+    colores = ["#2196F3", "#4CAF50", "#FF9800", "#F44336", "#9C27B0"]
+    
+    # Crear figura con 2 subplots
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig.suptitle('Diagramas de Caja - Resultados del Benchmarking', fontsize=16, fontweight='bold')
+    
+    # 1. Diagrama de caja de turnos
+    ax1 = axes[0]
+    datos_turnos = [por_algoritmo[alg]['turnos'] for alg in algoritmos if por_algoritmo[alg]['turnos']]
+    if datos_turnos:
+        bp1 = ax1.boxplot(datos_turnos, tick_labels=nombres[:len(datos_turnos)], patch_artist=True)
+        for patch, color in zip(bp1['boxes'], colores):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+    ax1.set_ylabel('Turnos', fontsize=11)
+    ax1.set_title('Distribución de Tiempo de Despeje', fontsize=12, fontweight='bold')
+    ax1.grid(axis='y', alpha=0.3)
+    
+    # 2. Diagrama de caja de supervivencia
+    ax2 = axes[1]
+    datos_supervivencia = [por_algoritmo[alg]['supervivencia'] for alg in algoritmos if por_algoritmo[alg]['supervivencia']]
+    if datos_supervivencia:
+        bp2 = ax2.boxplot(datos_supervivencia, tick_labels=nombres[:len(datos_supervivencia)], patch_artist=True)
+        for patch, color in zip(bp2['boxes'], colores):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+    ax2.set_ylabel('Supervivencia (%)', fontsize=11)
+    ax2.set_title('Distribución de Tasa de Supervivencia', fontsize=12, fontweight='bold')
+    ax2.set_ylim(0, 100)
+    ax2.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('resultados/diagrama_caja.png', dpi=150, bbox_inches='tight')
+    print(f"Diagrama de caja guardado en 'resultados/diagrama_caja.png'")
     plt.close()

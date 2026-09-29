@@ -21,7 +21,7 @@ def cargar_mapa(ruta_archivo):
 
 
 def _cargar_desde_json(ruta_archivo):
-    """Carga mapa desde archivo JSON."""
+    
     with open(ruta_archivo, 'r') as f:
         data = json.load(f)
     
@@ -36,7 +36,7 @@ def _cargar_desde_json(ruta_archivo):
 
 
 def _cargar_desde_csv(ruta_archivo):
-    """Carga mapa desde archivo CSV."""
+   
     mapa = []
     with open(ruta_archivo, 'r') as f:
         reader = csv.reader(f)
@@ -49,7 +49,7 @@ def _cargar_desde_csv(ruta_archivo):
 
 
 def _cargar_desde_txt(ruta_archivo):
-    """Carga mapa desde archivo TXT."""
+   
     mapa = []
     with open(ruta_archivo, 'r') as f:
         for line in f:

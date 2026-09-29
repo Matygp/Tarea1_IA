@@ -2,7 +2,7 @@ import random
 
 
 def _generar_ruta_aleatoria(inicio, meta, entorno, max_pasos=50):
-    """Genera una ruta aleatoria desde el inicio hasta la meta."""
+   
     ruta = [inicio]
     actual = inicio
     visitados = {inicio}
@@ -27,33 +27,30 @@ def _generar_ruta_aleatoria(inicio, meta, entorno, max_pasos=50):
 
 
 def _fitness(ruta, entorno):
-    """
-    Evalúa qué tan buena es una ruta.
-    Mayor puntaje = mejor ruta.
-    """
+ 
     if not ruta:
         return -10000
 
     puntaje = 0
 
-    # 1. Bonus por llegar a la salida
+    #  Bonus por llegar a la salida
     if ruta[-1] == entorno.salida:
         puntaje += 1000
 
-    # 2. Penalización por pasar por fuego
+    # Penalización por pasar por fuego
     for pos in ruta:
         if pos in entorno.fuego:
             puntaje -= 500
 
-    # 3. Penalización por longitud (rutas más cortas son mejores)
+    # Penalización por longitud (rutas más cortas son mejores)
     puntaje -= len(ruta) * 10
 
-    # 4. Penalización por congestión
+    # Penalización por congestión
     for pos in ruta:
         personas = entorno.ocupacion.get(pos, 0)
         puntaje -= personas * 5
 
-    # 5. Bonus por distancia a la salida (más cerca = mejor)
+    # Bonus por distancia a la salida (más cerca = mejor)
     if ruta:
         distancia = abs(ruta[-1][0] - entorno.salida[0]) + abs(ruta[-1][1] - entorno.salida[1])
         puntaje -= distancia * 20
@@ -62,7 +59,7 @@ def _fitness(ruta, entorno):
 
 
 def _seleccionar(poblacion, fitnesses):
-    """Selección por torneo: elige 2 al azar y se queda con el mejor."""
+   
     idx1, idx2 = random.sample(range(len(poblacion)), 2)
     if fitnesses[idx1] > fitnesses[idx2]:
         return poblacion[idx1]
@@ -70,7 +67,7 @@ def _seleccionar(poblacion, fitnesses):
 
 
 def _cruzar(padre1, padre2):
-    """Cruce: combina dos rutas en una nueva."""
+    
     puntos_comunes = set(padre1) & set(padre2)
     if puntos_comunes and len(padre1) > 2 and len(padre2) > 2:
         punto_cruce = random.choice(list(puntos_comunes))
@@ -87,7 +84,7 @@ def _cruzar(padre1, padre2):
 
 
 def _mutar(ruta, entorno, probabilidad=0.1):
-    """Mutación: cambia algunos movimientos aleatoriamente."""
+   
     if len(ruta) <= 2:
         return ruta.copy()
 
@@ -111,26 +108,24 @@ def _mutar(ruta, entorno, probabilidad=0.1):
 
 
 def busqueda_genetico(inicio, meta, entorno, tamano_poblacion=30, generaciones=50, prob_mutacion=0.1):
-    """
-    Algoritmo Genético para encontrar rutas de evacuación.
-    """
-    # 1. Generar población inicial
+    
+    #  Generar población inicial
     poblacion = [_generar_ruta_aleatoria(inicio, meta, entorno) for _ in range(tamano_poblacion)]
 
     mejor_ruta = []
     mejor_fitness = -10000
 
     for generacion in range(generaciones):
-        # 2. Evaluar fitness
+        #  Evaluar fitness
         fitnesses = [_fitness(ruta, entorno) for ruta in poblacion]
 
-        # 3. Encontrar mejor ruta de esta generación
+        # Encontrar mejor ruta de esta generación
         for i, fit in enumerate(fitnesses):
             if fit > mejor_fitness:
                 mejor_fitness = fit
                 mejor_ruta = poblacion[i]
 
-        # 4. Crear nueva generación
+        # Crear nueva generación
         nueva_poblacion = []
 
         # Elitismo: mantener los mejores 2

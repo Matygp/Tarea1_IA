@@ -13,9 +13,7 @@ class GestorMetricas:
         self.tiempos_despeje.append(turnos_totales)
 
     def calcular_estadisticas(self):
-        """
-        Calcula los estadísticos descriptivos obligatorios para el benchmarking.
-        """
+       
         if not self.tasas_supervivencia or not self.tiempos_despeje:
             return {
                 "algoritmo": self.algoritmo,

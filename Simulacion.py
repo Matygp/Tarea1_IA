@@ -5,7 +5,7 @@ from metricas.Metricas import GestorMetricas
 
 
 def _posiciones_validas(mapa, salida):
-    """Obtiene todas las celdas válidas (no muros) del mapa."""
+    
     validas = []
     for y in range(len(mapa)):
         for x in range(len(mapa[0])):
@@ -47,7 +47,7 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
     while turno < max_turnos:
         turno += 1
         
-        # 1. Actualizar conteo de ocupación del entorno
+        #  Actualizar conteo de ocupación del entorno
         entorno.ocupacion.clear()
         vivos_restantes = 0
         for ag in agentes:
@@ -58,11 +58,11 @@ def ejecutar_simulacion(mapa, salida, posiciones_iniciales, focos_fuego_iniciale
         if vivos_restantes == 0:
             break
 
-        # 2. Propagar fuego cada k turnos (ANTES de mover agentes)
+        # Propagar fuego cada k turnos (ANTES de mover agentes)
         if turno % k_fuego == 0:
             entorno.propagar_fuego()
 
-        # 3. Mover agentes
+        #  Mover agentes
         for ag in agentes:
             if ag.estado == "vivo":
                 if ag.posicion in entorno.fuego:

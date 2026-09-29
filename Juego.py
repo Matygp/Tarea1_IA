@@ -6,13 +6,8 @@ import random
 import json
 import os
 from datetime import datetime
-from Simulacion import ejecutar_simulacion
+from Simulacion import ejecutar_simulacion, ejecutar_benchmarking
 from CargadorMapa import cargar_mapa, validar_mapa
-from algoritmos.A_estrella import busqueda_a_estrella
-from algoritmos.Costo_uniforme import busqueda_ucs
-from algoritmos.BFS import busqueda_bfs
-from algoritmos.Greedy import busqueda_greedy
-from algoritmos.Genetico import busqueda_genetico
 
 
 class JuegoEvacuacion:
@@ -31,8 +26,10 @@ class JuegoEvacuacion:
         self.turno = 0
         self.k_fuego = 4
         self.algoritmo = "a_star"
+        self.iteraciones = 200
         self.ejecutando = False
         self.pausado = False
+        self.modo_benchmarking = False
         
         # Colores del juego
         self.colores = {
@@ -47,7 +44,6 @@ class JuegoEvacuacion:
             'fondo': '#1a1a2e',
             'panel': '#16213e',
             'boton': '#0f3460',
-            'boton_hover': '#1a4a7a'
         }
         
         self._crear_widgets()
@@ -107,6 +103,20 @@ class JuegoEvacuacion:
         self.entry_k_fuego.insert(0, "4")
         self.entry_k_fuego.pack(fill=tk.X, pady=2)
         
+        # Iteraciones
+        tk.Label(frame_controles, text="Iteraciones:", bg=self.colores['panel'], 
+                fg=self.colores['texto'], font=("Arial", 9)).pack(anchor=tk.W, pady=1)
+        self.entry_iteraciones = tk.Entry(frame_controles, width=10)
+        self.entry_iteraciones.insert(0, "200")
+        self.entry_iteraciones.pack(fill=tk.X, pady=2)
+        
+        # Semilla
+        tk.Label(frame_controles, text="Semilla (opcional):", bg=self.colores['panel'], 
+                fg=self.colores['texto'], font=("Arial", 9)).pack(anchor=tk.W, pady=1)
+        self.entry_semilla = tk.Entry(frame_controles, width=10)
+        self.entry_semilla.insert(0, "42")
+        self.entry_semilla.pack(fill=tk.X, pady=2)
+        
         # Velocidad
         tk.Label(frame_controles, text="Velocidad:", bg=self.colores['panel'], 
                 fg=self.colores['texto'], font=("Arial", 9)).pack(anchor=tk.W, pady=1)
@@ -120,7 +130,7 @@ class JuegoEvacuacion:
         ttk.Separator(frame_controles, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
         
         # Botones de control
-        self.btn_iniciar = tk.Button(frame_controles, text="Iniciar", 
+        self.btn_iniciar = tk.Button(frame_controles, text="Iniciar Simulación", 
                                     command=self._iniciar_simulacion,
                                     bg='#4CAF50', fg='white', 
                                     font=("Arial", 10, "bold"))
@@ -137,6 +147,22 @@ class JuegoEvacuacion:
                                       bg='#f44336', fg='white', 
                                       font=("Arial", 10, "bold"))
         self.btn_reiniciar.pack(fill=tk.X, pady=2)
+        
+        self.btn_benchmarking = tk.Button(frame_controles, text="Ejecutar Benchmarking", 
+                                         command=self._ejecutar_benchmarking,
+                                         bg='#2196F3', fg='white', 
+                                         font=("Arial", 10, "bold"))
+        self.btn_benchmarking.pack(fill=tk.X, pady=2)
+        
+        self.btn_graficas = tk.Button(frame_controles, text="Gráficas", 
+                                     command=self._generar_graficas,
+                                     bg='#9C27B0', fg='white', 
+                                     font=("Arial", 10, "bold"))
+        self.btn_graficas.pack(fill=tk.X, pady=2)
+        
+        # Barra de progreso
+        self.progreso = ttk.Progressbar(frame_controles, mode='indeterminate', length=200)
+        self.progreso.pack(fill=tk.X, pady=10)
         
         # Separador
         ttk.Separator(frame_controles, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
@@ -165,26 +191,43 @@ class JuegoEvacuacion:
                                        font=("Arial", 9))
         self.label_atrapados.pack(anchor=tk.W, pady=1)
         
-        # Panel central (Canvas del mapa)
+        # Panel central (Canvas del mapa con scrollbars)
         frame_canvas = tk.LabelFrame(frame_principal, text="Mapa", 
                                     font=("Arial", 12, "bold"), 
                                     bg=self.colores['panel'], fg=self.colores['texto'])
         frame_canvas.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        self.canvas = tk.Canvas(frame_canvas, bg=self.colores['vacio'], 
-                               highlightthickness=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # Frame para canvas con scrollbars
+        frame_canvas_inner = tk.Frame(frame_canvas, bg=self.colores['panel'])
+        frame_canvas_inner.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Panel inferior (Log)
-        frame_log = tk.LabelFrame(frame_principal, text="Log de Eventos", 
-                                 font=("Arial", 12, "bold"), 
-                                 bg=self.colores['panel'], fg=self.colores['texto'])
-        frame_log.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
+        # Scrollbars
+        self.scroll_x = tk.Scrollbar(frame_canvas_inner, orient=tk.HORIZONTAL)
+        self.scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
         
-        self.texto_log = ScrolledText(frame_log, height=6, 
-                                     font=("Consolas", 9),
-                                     bg=self.colores['fondo'], fg=self.colores['texto'])
-        self.texto_log.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.scroll_y = tk.Scrollbar(frame_canvas_inner, orient=tk.VERTICAL)
+        self.scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Canvas con scrollbars
+        self.canvas = tk.Canvas(frame_canvas_inner, bg=self.colores['vacio'], 
+                               highlightthickness=0,
+                               xscrollcommand=self.scroll_x.set,
+                               yscrollcommand=self.scroll_y.set)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.scroll_x.config(command=self.canvas.xview)
+        self.scroll_y.config(command=self.canvas.yview)
+        
+        # Panel inferior (Resultados)
+        frame_resultados = tk.LabelFrame(frame_principal, text="Resultados", 
+                                        font=("Arial", 12, "bold"), 
+                                        bg=self.colores['panel'], fg=self.colores['texto'])
+        frame_resultados.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
+        
+        self.texto_resultados = ScrolledText(frame_resultados, height=8, 
+                                            font=("Consolas", 10),
+                                            bg=self.colores['fondo'], fg=self.colores['texto'])
+        self.texto_resultados.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         # Mensaje de estado
         self.label_estado = tk.Label(self.root, text="Carga un mapa para comenzar", 
@@ -227,10 +270,11 @@ class JuegoEvacuacion:
             # Dibujar mapa
             self._dibujar_mapa()
             
-            # Log
-            self._log(f"Mapa cargado: {nombre_archivo}")
-            self._log(f"Dimensiones: {len(mapa[0])}x{len(mapa)}")
-            self._log(f"Salida: {salida}")
+            # Mostrar información
+            self.texto_resultados.delete(1.0, tk.END)
+            self.texto_resultados.insert(tk.END, f"Mapa cargado: {nombre_archivo}\n")
+            self.texto_resultados.insert(tk.END, f"Dimensiones: {len(mapa[0])}x{len(mapa)}\n")
+            self.texto_resultados.insert(tk.END, f"Salida: {salida}\n\n")
             
             self.label_estado.config(text=f"Mapa cargado: {nombre_archivo}")
             
@@ -244,28 +288,36 @@ class JuegoEvacuacion:
         
         self.canvas.delete("all")
         
-        # Calcular tamaño de celda
-        ancho_canvas = self.canvas.winfo_width()
-        alto_canvas = self.canvas.winfo_height()
-        
-        # Si el canvas aún no tiene tamaño, usar valores por defecto
-        if ancho_canvas <= 1 or alto_canvas <= 1:
-            ancho_canvas = 600
-            alto_canvas = 500
-        
         filas = len(self.mapa)
         columnas = len(self.mapa[0])
         
-        celda_ancho = ancho_canvas // columnas
-        celda_alto = alto_canvas // filas
-        celda = min(celda_ancho, celda_alto)
+        # Tamaño de celda fijo según el tamaño del mapa
+        if filas <= 15:
+            celda = 40
+        elif filas <= 25:
+            celda = 30
+        elif filas <= 35:
+            celda = 20
+        else:  # 50x50 o más
+            celda = 15
         
-        # Asegurar que las celdas sean visibles (mínimo 10px para mapas grandes)
-        celda = max(celda, 10)
+        # Calcular dimensiones totales del mapa
+        mapa_ancho = columnas * celda
+        mapa_alto = filas * celda
         
-        # Centrar mapa
-        offset_x = (ancho_canvas - columnas * celda) // 2
-        offset_y = (alto_canvas - filas * celda) // 2
+        # Configurar región de scroll
+        self.canvas.config(scrollregion=(0, 0, mapa_ancho, mapa_alto))
+        
+        # Centrar mapa inicialmente
+        ancho_canvas = self.canvas.winfo_width()
+        alto_canvas = self.canvas.winfo_height()
+        
+        if ancho_canvas > 1 and alto_canvas > 1:
+            offset_x = max(0, (ancho_canvas - mapa_ancho) // 2)
+            offset_y = max(0, (alto_canvas - mapa_alto) // 2)
+        else:
+            offset_x = 0
+            offset_y = 0
         
         self.celda_size = celda
         self.offset_x = offset_x
@@ -340,7 +392,7 @@ class JuegoEvacuacion:
                                     fill=self.colores['fuego'], outline='#ff6600', width=1)
     
     def _iniciar_simulacion(self):
-        """Inicia la simulación."""
+        """Inicia la simulación visual."""
         if not self.mapa:
             messagebox.showwarning("Advertencia", "Carga un mapa primero")
             return
@@ -351,6 +403,7 @@ class JuegoEvacuacion:
         self.ejecutando = True
         self.pausado = False
         self.turno = 0
+        self.modo_benchmarking = False
         
         # Obtener configuración
         self.algoritmo = self.combo_algoritmo.get()
@@ -388,9 +441,10 @@ class JuegoEvacuacion:
         self.btn_pausar.config(state=tk.NORMAL)
         self.label_estado.config(text="Simulación en curso...")
         
-        self._log(f"Simulación iniciada con {self.algoritmo.upper()}")
-        self._log(f"Agentes: {num_agentes}")
-        self._log(f"K fuego: {self.k_fuego}")
+        self.texto_resultados.delete(1.0, tk.END)
+        self.texto_resultados.insert(tk.END, f"Simulación iniciada con {self.algoritmo.upper()}\n")
+        self.texto_resultados.insert(tk.END, f"Agentes: {num_agentes}\n")
+        self.texto_resultados.insert(tk.END, f"K fuego: {self.k_fuego}\n\n")
         
         # Iniciar hilo de simulación
         hilo = threading.Thread(target=self._ejecutar_turno)
@@ -414,7 +468,8 @@ class JuegoEvacuacion:
                         self.mapa[ny][nx] == 0):
                         nuevo_fuego.add((nx, ny))
             self.fuego.update(nuevo_fuego)
-            self._log(f"Turno {self.turno}: Fuego propagado ({len(self.fuego)} celdas)")
+            self.texto_resultados.insert(tk.END, f"Turno {self.turno}: Fuego propagado ({len(self.fuego)} celdas)\n")
+            self.texto_resultados.see(tk.END)
         
         # Mover agentes
         for ag in self.agentes:
@@ -424,7 +479,8 @@ class JuegoEvacuacion:
             # Verificar si está en fuego
             if ag['posicion'] in self.fuego:
                 ag['estado'] = 'atrapado'
-                self._log(f"Agente {ag['id']} atrapado por el fuego!")
+                self.texto_resultados.insert(tk.END, f"Agente {ag['id']} atrapado por el fuego!\n")
+                self.texto_resultados.see(tk.END)
                 continue
             
             # Obtener camino si no tiene
@@ -434,14 +490,19 @@ class JuegoEvacuacion:
                 entorno.fuego = self.fuego
                 
                 if self.algoritmo == "a_star":
+                    from algoritmos.A_estrella import busqueda_a_estrella
                     ag['camino'] = busqueda_a_estrella(ag['posicion'], self.salida, entorno)
                 elif self.algoritmo == "ucs":
+                    from algoritmos.Costo_uniforme import busqueda_ucs
                     ag['camino'] = busqueda_ucs(ag['posicion'], self.salida, entorno)
                 elif self.algoritmo == "bfs":
+                    from algoritmos.BFS import busqueda_bfs
                     ag['camino'] = busqueda_bfs(ag['posicion'], self.salida, entorno)
                 elif self.algoritmo == "greedy":
+                    from algoritmos.Greedy import busqueda_greedy
                     ag['camino'] = busqueda_greedy(ag['posicion'], self.salida, entorno)
                 elif self.algoritmo == "genetico":
+                    from algoritmos.Genetico import busqueda_genetico
                     ag['camino'] = busqueda_genetico(ag['posicion'], self.salida, entorno)
             
             # Mover
@@ -458,7 +519,8 @@ class JuegoEvacuacion:
             # Verificar si llegó a la salida
             if ag['posicion'] == self.salida and ag['posicion'] not in self.fuego:
                 ag['estado'] = 'evacuado'
-                self._log(f"Agente {ag['id']} evacuado!")
+                self.texto_resultados.insert(tk.END, f"Agente {ag['id']} evacuado!\n")
+                self.texto_resultados.see(tk.END)
         
         # Actualizar estadísticas
         vivos = sum(1 for ag in self.agentes if ag['estado'] == 'vivo')
@@ -479,14 +541,12 @@ class JuegoEvacuacion:
             self.btn_iniciar.config(state=tk.NORMAL)
             self.btn_pausar.config(state=tk.DISABLED)
             self.label_estado.config(text="Simulación finalizada")
-            self._log(f"Simulación finalizada en {self.turno} turnos")
-            self._log(f"Supervivencia: {evacuados}/{len(self.agentes)} ({100*evacuados/len(self.agentes):.1f}%)")
+            self.texto_resultados.insert(tk.END, f"\nSimulación finalizada en {self.turno} turnos\n")
+            self.texto_resultados.insert(tk.END, f"Supervivencia: {evacuados}/{len(self.agentes)} ({100*evacuados/len(self.agentes):.1f}%)\n")
+            self.texto_resultados.see(tk.END)
             
-            # Guardar datos de la simulación
-            filename = self._guardar_datos()
-            if filename:
-                self._log(f"Resultados guardados en: {filename}")
-            
+            # Guardar datos
+            self._guardar_datos()
             return
         
         # Programar siguiente turno
@@ -522,12 +582,111 @@ class JuegoEvacuacion:
         self.label_atrapados.config(text="Atrapados: 0")
         
         self._dibujar_mapa()
-        self._log("Simulación reiniciada")
+        self.texto_resultados.delete(1.0, tk.END)
+        self.texto_resultados.insert(tk.END, "Simulación reiniciada\n")
     
-    def _log(self, mensaje):
-        """Agrega un mensaje al log."""
-        self.texto_log.insert(tk.END, f"{mensaje}\n")
-        self.texto_log.see(tk.END)
+    def _ejecutar_benchmarking(self):
+        """Ejecuta el benchmarking con 200 iteraciones."""
+        if not self.mapa:
+            messagebox.showwarning("Advertencia", "Carga un mapa primero")
+            return
+        
+        if self.ejecutando:
+            return
+        
+        # Obtener configuración
+        self.algoritmo = self.combo_algoritmo.get()
+        self.k_fuego = int(self.entry_k_fuego.get())
+        self.iteraciones = int(self.entry_iteraciones.get())
+        
+        semilla_str = self.entry_semilla.get()
+        semilla = int(semilla_str) if semilla_str else None
+        
+        # Deshabilitar botón
+        self.btn_benchmarking.config(state=tk.DISABLED)
+        self.progreso.start()
+        self.label_estado.config(text=f"Ejecutando {self.iteraciones} iteraciones...")
+        self.texto_resultados.delete(1.0, tk.END)
+        self.texto_resultados.insert(tk.END, f"Ejecutando benchmarking con {self.iteraciones} iteraciones...\n")
+        self.texto_resultados.see(tk.END)
+        
+        # Ejecutar en hilo separado
+        hilo = threading.Thread(target=self._ejecutar_benchmarking_hilo, args=(semilla,))
+        hilo.start()
+    
+    def _ejecutar_benchmarking_hilo(self, semilla):
+        """Ejecuta el benchmarking en un hilo separado."""
+        try:
+            # Generar posiciones base
+            posiciones_base = [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0), (0, 3)]
+            focos_fuego_base = {(0, 9)}
+            
+            # Ejecutar benchmarking
+            gestor = ejecutar_benchmarking(
+                self.mapa, self.salida, posiciones_base, focos_fuego_base,
+                algoritmo=self.algoritmo, iteraciones=self.iteraciones, 
+                k_fuego=self.k_fuego, semilla=semilla
+            )
+            
+            stats = gestor.calcular_estadisticas()
+            
+            # Obtener listas de datos individuales
+            turnos_lista = gestor.tiempos_despeje
+            supervivencia_lista = gestor.tasas_supervivencia
+            
+            # Guardar datos para gráficas
+            self._guardar_datos_benchmarking(stats, turnos_lista, supervivencia_lista)
+            
+            # Actualizar UI
+            self.root.after(0, self._mostrar_resultados_benchmarking, stats)
+            
+        except Exception as e:
+            self.root.after(0, messagebox.showerror, "Error", str(e))
+        finally:
+            self.root.after(0, self._finalizar_benchmarking)
+    
+    def _mostrar_resultados_benchmarking(self, stats):
+        """Muestra los resultados del benchmarking."""
+        resultado_texto = f"""
+{'='*50}
+RESULTADOS DEL BENCHMARKING
+{'='*50}
+
+Algoritmo: {stats['algoritmo'].upper()}
+Iteraciones: {stats['iteraciones']}
+
+--- SUPERVIVENCIA ---
+  Tasa de supervivencia media: {stats['supervivencia_media']:.2f}%
+  Desviación estándar: {stats['supervivencia_std']:.2f}
+
+--- TIEMPO (TURNOS) ---
+  Media: {stats['tiempo_media']:.2f}
+  Desviación estándar: {stats['tiempo_std']:.2f}
+  Valor mínimo: {stats['tiempo_min']}
+  Valor máximo: {stats['tiempo_max']}
+
+{'='*50}
+"""
+        
+        self.texto_resultados.delete(1.0, tk.END)
+        self.texto_resultados.insert(tk.END, resultado_texto)
+        self.texto_resultados.see(tk.END)
+    
+    def _finalizar_benchmarking(self):
+        """Habilita el botón al finalizar."""
+        self.btn_benchmarking.config(state=tk.NORMAL)
+        self.progreso.stop()
+        self.label_estado.config(text="Benchmarking completado")
+    
+    def _generar_graficas(self):
+        """Genera las gráficas desde los datos del juego."""
+        try:
+            from metricas.Graficas import generar_graficas_desde_juego, generar_diagrama_caja
+            generar_graficas_desde_juego()
+            generar_diagrama_caja()
+            self.label_estado.config(text="Gráficas generadas en 'resultados/'")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al generar gráficas: {str(e)}")
     
     def _guardar_datos(self):
         """Guarda los datos de la simulación en un archivo JSON."""
@@ -574,8 +733,37 @@ class JuegoEvacuacion:
         with open(filename, 'w') as f:
             json.dump(datos, f, indent=2)
         
-        self._log(f"Datos guardados en: {filename}")
+        self.texto_resultados.insert(tk.END, f"\nDatos guardados en: {filename}\n")
+        self.texto_resultados.see(tk.END)
         return filename
+    
+    def _guardar_datos_benchmarking(self, stats, turnos_lista, supervivencia_lista):
+        """Guarda los datos del benchmarking para las gráficas."""
+        os.makedirs('resultados', exist_ok=True)
+        filename = f"resultados/benchmarking_{self.algoritmo}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        datos = {
+            'fecha': datetime.now().isoformat(),
+            'algoritmo': self.algoritmo,
+            'iteraciones': self.iteraciones,
+            'turnos': turnos_lista,  # Lista de turnos de cada iteración
+            'supervivencia': supervivencia_lista,  # Lista de supervivencia de cada iteración
+            'agentes': [],
+            'fuego_final': [],
+            'salida': self.salida,
+            'estadisticas': {
+                'total_agentes': 6,
+                'evacuados': int(stats['supervivencia_media'] / 100 * 6),
+                'atrapados': 6 - int(stats['supervivencia_media'] / 100 * 6),
+                'tasa_supervivencia': stats['supervivencia_media']
+            }
+        }
+        
+        with open(filename, 'w') as f:
+            json.dump(datos, f, indent=2)
+        
+        self.texto_resultados.insert(tk.END, f"Datos de benchmarking guardados en: {filename}\n")
+        self.texto_resultados.see(tk.END)
 
 
 def main():
